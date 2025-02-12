@@ -1,0 +1,18 @@
+.login-background {
+    background: linear-gradient(to bottom right, #4c6ef5, #9b59b6, #e91e63);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* Apply backdrop filter for blur */
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Custom container style to enhance the login card */
+  .login-container {
+    background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }

@@ -1,0 +1,128 @@
+const express = require("express")
+const cors = require("cors")
+
+const app = express()
+const port = 5000
+
+app.use(cors())
+app.use(express.json())
+
+// Mock data
+const departments = ["CSE", "IT", "EEE", "ECE", "CIVIL", "MECH"]
+const departmentContent = {
+  CSE: {
+    name: "Computer Science and Engineering",
+    description: "Study of computation, information processing, and systems.",
+    events: [
+      { title: "Annual Hackathon", date: "2025-05-15" },
+      { title: "AI Workshop", date: "2025-06-20" },
+    ],
+    performance: {
+      averageGPA: 3.7,
+      placementRate: "92%",
+    },
+    achievements: [
+      { title: "First Place in National Coding Competition", year: 2024 },
+      { title: "Published 15 research papers in top conferences", year: 2024 },
+    ],
+  },
+  IT: {
+    name: "Information Technology",
+    description: "Focuses on computing technologies and their applications in business.",
+    events: [
+      { title: "IT Expo", date: "2025-07-10" },
+      { title: "Cybersecurity Seminar", date: "2025-08-05" },
+    ],
+    performance: {
+      averageGPA: 3.6,
+      placementRate: "90%",
+    },
+    achievements: [
+      { title: "Best IT Project Award at State Level", year: 2024 },
+      { title: "Developed innovative campus management system", year: 2023 },
+    ],
+  },
+  EEE: {
+    name: "Electrical and Electronics Engineering",
+    description: "Deals with electrical systems, electronics, and power systems.",
+    events: [
+      { title: "Robotics Competition", date: "2025-09-12" },
+      { title: "Power Systems Conference", date: "2025-10-18" },
+    ],
+    performance: {
+      averageGPA: 3.5,
+      placementRate: "88%",
+    },
+    achievements: [
+      { title: "Patent filed for new energy-efficient circuit design", year: 2024 },
+      { title: "Won National Level Project Competition", year: 2023 },
+    ],
+  },
+  ECE: {
+    name: "Electronics and Communication Engineering",
+    description: "Focuses on electronic devices and communication systems.",
+    events: [
+      { title: "IoT Workshop", date: "2025-11-05" },
+      { title: "Communication Systems Symposium", date: "2025-12-10" },
+    ],
+    performance: {
+      averageGPA: 3.6,
+      placementRate: "89%",
+    },
+    achievements: [
+      { title: "Developed low-cost communication device for rural areas", year: 2024 },
+      { title: "Best Paper Award at International Conference on Communications", year: 2023 },
+    ],
+  },
+  CIVIL: {
+    name: "Civil Engineering",
+    description: "Deals with design, construction, and maintenance of the built environment.",
+    events: [
+      { title: "Bridge Design Competition", date: "2025-02-20" },
+      { title: "Sustainable Construction Seminar", date: "2025-03-15" },
+    ],
+    performance: {
+      averageGPA: 3.4,
+      placementRate: "85%",
+    },
+    achievements: [
+      { title: "Designed eco-friendly campus building", year: 2024 },
+      { title: "Won Best Thesis Award at National Level", year: 2023 },
+    ],
+  },
+  MECH: {
+    name: "Mechanical Engineering",
+    description: "Study of machinery, energy systems, and manufacturing processes.",
+    events: [
+      { title: "AutoExpo", date: "2025-04-10" },
+      { title: "Renewable Energy Conference", date: "2025-05-22" },
+    ],
+    performance: {
+      averageGPA: 3.5,
+      placementRate: "87%",
+    },
+    achievements: [
+      { title: "Developed innovative cooling system for EVs", year: 2024 },
+      { title: "Second Place in SAE Baja Competition", year: 2023 },
+    ],
+  },
+}
+
+// Routes
+app.get("/api/departments", (req, res) => {
+  res.json(departments)
+})
+
+app.get("/api/content/:department", (req, res) => {
+  const department = req.params.department
+  if (departmentContent[department]) {
+    res.json(departmentContent[department])
+  } else {
+    res.status(404).json({ error: "Department not found" })
+  }
+})
+
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`)
+})
+

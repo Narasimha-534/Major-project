@@ -1,0 +1,20 @@
+.dept_content {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.card1 {
+    background-image: url('https://res.cloudinary.com/dweuu8yiq/image/upload/v1738768236/00795a86-6035-4b9c-a392-c68b7da9c7ba_oytqu8.jpg') !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: rgb(90, 88, 88);
+    height: 180px !important;
+    width: 300px !important;
+    flex-grow: 1;
+    padding: 30px;
+    margin: 20px;
+    background-size: cover;
+    border: none !important;
+}
