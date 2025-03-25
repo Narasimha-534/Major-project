@@ -11,6 +11,7 @@ import DepartmentStudentPerformance from "./components/DepartmentStudentPerforma
 import DepartmentAchievements from "./components/DepartmentAchievements"
 import EventDetails from "./components/EventDetails"
 import AchievementDetails from "./components/AchievementDetails"
+import GenerateAnnualReport from "./components/GenerateAnnualReport"
 
 const ProtectedRoute = ({ element: Element, allowedRoles }) => {
   const isAuthenticated = !!localStorage.getItem("token")
@@ -51,6 +52,7 @@ function App() {
         <Route path="/ACHIEVEMENTS/:dept" element={<DepartmentAchievements/>} />
         <Route exact path="/EVENTS/:dept/:eventId" element={<EventDetails/>} />
         <Route exact path="/ACHIEVEMENTS/:dept/:id" element={<AchievementDetails/>} />
+        <Route exact path="/generate-annual-report" element={<GenerateAnnualReport/>} />
       </Routes>
     </Router>
   )
