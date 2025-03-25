@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import pool from "../config/database.js";
 import { generateAIReport } from "../utils/aiReportGenerator.js";
+import { generateAnnualReport } from "../utils/aiAnnualReportGenerator.js";
 import fs from "fs";
 
 const router = express.Router();
@@ -72,5 +73,61 @@ router.get("/:fileName", (req, res) => {
         res.status(404).json({ error: "File not found" });
     }
 });
+
+
+router.post("/generate-annual-report", async (req, res) => {
+    const { academicYear, selectedEvents, selectedAchievements, placementInfo } = req.body;
+
+    if (!academicYear) {
+        return res.status(400).json({ error: "Academic year is required" });
+    }
+
+    if (!selectedEvents || !Array.isArray(selectedEvents) || selectedEvents.length === 0) {
+        return res.status(400).json({ error: "Selected events are required as an array" });
+    }
+
+    try{
+        const events = selectedEvents || []
+        const achievements = selectedAchievements || [];
+        const placements = placementInfo || [];
+
+        // Generate AI-powered Annual Report (PDF & Word)
+        const reportPaths = await generateAnnualReport({academicYear, events, achievements, placements });
+
+        if (!reportPaths) {
+            return res.status(500).json({ error: "Failed to generate annual report" });
+        }
+
+        const reportURL = `http://localhost:5000/annual_reports/Annual_Report_${academicYear}.pdf`;
+        const wordURL = `http://localhost:5000/annual_reports/Annual_Report_${academicYear}.docx`;
+
+        // Store report URLs in the database (if needed)
+        await pool.query(
+            "INSERT INTO annual_reports (academic_year, report_url, report_docx_url) VALUES ($1, $2, $3) ON CONFLICT (academic_year) DO UPDATE SET report_url = EXCLUDED.report_url, report_docx_url = EXCLUDED.report_docx_url",
+            [academicYear, reportURL, wordURL]
+        );
+
+        console.log(reportURL,wordURL)
+
+        console.log({
+            success: true,
+            message: "Annual report generated successfully",
+            report_url: reportURL,
+            word_url: wordURL
+        });
+        
+
+        res.status(200).json({
+            success: true,
+            message: "Annual report generated successfully",
+            report_url: reportURL,
+            word_url: wordURL
+        });
+    } catch (error) {
+        console.error("Error generating annual report:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 
 export default router;

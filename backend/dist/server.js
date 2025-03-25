@@ -13,13 +13,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/reports', express.static(path.join(process.cwd(), 'reports')));
+app.use("/annual_reports", express.static(path.join(process.cwd(),"annual_reports")));
 app.use('/reports/images', express.static(path.join(process.cwd(), 'reports/images')));
 
 
 const reportsPath = path.join(process.cwd(), 'reports');
 console.log('Serving reports from:', reportsPath);
-
-
 
 app.use('/api', authRoutes);
 app.use('/api', eventRoutes);
