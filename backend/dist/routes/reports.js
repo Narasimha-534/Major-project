@@ -91,8 +91,26 @@ router.post("/generate-annual-report", async (req, res) => {
         const achievements = selectedAchievements || [];
         const placements = placementInfo || [];
 
+        const academicEndYear = academicYear.split('-')[1]; // '2025'
+
+        const performance_result = await pool.query(`
+        SELECT 
+            department,
+            AVG(pass_percentage) AS average_pass_percentage
+        FROM 
+            semester_performance
+        WHERE 
+            RIGHT(batch, 4) = $1
+        GROUP BY 
+            department, RIGHT(batch, 4)
+        ORDER BY 
+            department, RIGHT(batch, 4);
+        `, [academicEndYear]);
+
+        const performance = performance_result.rows
+
         // Generate AI-powered Annual Report (PDF & Word)
-        const reportPaths = await generateAnnualReport({academicYear, events, achievements, placements });
+        const reportPaths = await generateAnnualReport({academicYear,performance, events, achievements, placements });
 
         if (!reportPaths) {
             return res.status(500).json({ error: "Failed to generate annual report" });
@@ -106,15 +124,6 @@ router.post("/generate-annual-report", async (req, res) => {
             "INSERT INTO annual_reports (academic_year, report_url, report_docx_url) VALUES ($1, $2, $3) ON CONFLICT (academic_year) DO UPDATE SET report_url = EXCLUDED.report_url, report_docx_url = EXCLUDED.report_docx_url",
             [academicYear, reportURL, wordURL]
         );
-
-        console.log(reportURL,wordURL)
-
-        console.log({
-            success: true,
-            message: "Annual report generated successfully",
-            report_url: reportURL,
-            word_url: wordURL
-        });
         
 
         res.status(200).json({

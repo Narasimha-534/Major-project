@@ -11,7 +11,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export const generateAnnualReport = async (reportData) => {
-    const { academicYear, events, achievements, placements } = reportData;
+    const { academicYear,performance, events, achievements, placements } = reportData;
 
     console.log(reportData);
 
@@ -35,24 +35,33 @@ export const generateAnnualReport = async (reportData) => {
     The institution remained committed to **fostering academic excellence, professional development, and student career growth**.
 
     ### **2️⃣ Events**  
-    The institution organized **several academic and professional events** throughout the year. Below is a summary of key events conducted during **${academicYear}**:
+    Below is a summary of key events conducted during **${academicYear}**:
 
     ${events.map(event => `- **${event.name}**: ${event.description || "No description available."}`).join("\n")}
 
     These events contributed to **faculty development, student engagement, and industry collaborations**, enhancing the overall learning experience.
 
     ### **3️⃣ Achievements**  
-    The institution witnessed **notable achievements** during the academic year. Some key highlights include:
+    Some key highlights include:
 
     ${achievements.map(ach => `- **${ach.title}**: ${ach.description || "No details available."}`).join("\n")}
 
     These accomplishments reflect the **dedication of faculty and students** in various domains.
 
-    ### **4️⃣ Placements**  
+    ### **4️⃣ Performance**  
+    The performance of students across different departments during **${academicYear}** was exemplary. The average pass percentages by department are as follows:
+
+    ${performance.map(department => `- **${department.department}**: Average Pass Percentage: ${department.average_pass_percentage}%`).join("\n")}
+
+    This highlights the **outstanding academic achievements** of students across various disciplines, reflecting the institution's strong academic framework and dedication to excellence.
+
+    ### **4️⃣ Placements**
     The institution achieved **remarkable success** in campus placements for the academic year **${academicYear}**.  
     With strong industry collaborations, rigorous training programs, and dedicated career support, students secured excellent job opportunities across various sectors.  
 
     These numbers demonstrate the institution's **strong ties with industry partners** and its commitment to **student career growth**.
+
+    **Please provide a concise summary of placement achievements in a **plain-text paragraph only**, without using tables, bullet points, or placeholders. Do not generate a table or ask for additional data.**
 
     ### **5️⃣ Conclusion**  
     The academic year **${academicYear}** was marked by **significant milestones**, including impactful events, notable achievements, and strong placement outcomes.  
@@ -205,7 +214,6 @@ async function generatePDF(text, filePath, events, achievements, placements) {
                 
                 if (placements) {
                     pdfDoc.font("Helvetica").fontSize(12)
-                        .text("The institution achieved remarkable success in campus placements. Through strong industry partnerships and dedicated career support services, students secured excellent job opportunities across diverse sectors.", { align: "left" })
                         .moveDown();
                     
                     const tableHeaders = ["Metric", "Count"];

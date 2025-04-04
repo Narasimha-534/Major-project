@@ -4,6 +4,7 @@ import Department from "../Department";
 import Navbar from "../Navbar";
 import AllEvents from "../AllEvents";
 import AnnualReports from "../AnnualReports";
+import StudentPerformance from "../StudentPerformance";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChartLine, FaCalendarAlt, FaFileAlt, FaUniversity, FaLaptopCode, FaNetworkWired, FaBolt, FaMicrochip, FaBuilding, FaCogs, FaChevronRight, FaCheck } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -632,29 +633,12 @@ const Dashboard = () => {
 
             {activeTab === "Student Performance" && (
               <motion.div 
-                className="bg-white rounded-4 shadow p-4 text-center h-100"
+                className="bg-white rounded-4 shadow p-4 h-100"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
               >
-                <motion.div variants={itemVariants}>
-                  <h2 style={{ 
-                    background: "linear-gradient(45deg, #4B0082, #FF1493)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent"
-                  }}>
-                    Student Performance Analytics
-                  </h2>
-                  <div className="row justify-content-center my-5">
-                    <div className="col-md-8">
-                      <div className="alert alert-info p-4">
-                        <FaChartLine className="display-4 mb-3" />
-                        <p className="lead">Performance analytics module coming soon.</p>
-                        <p className="text-muted">Our team is working on bringing you comprehensive student performance metrics and visualizations.</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                <StudentPerformance />
               </motion.div>
             )}
           </motion.div>

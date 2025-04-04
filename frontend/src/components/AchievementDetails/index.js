@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Button, Badge } from 'react-bootstrap';
+import { Button, Badge } from 'react-bootstrap';
 import { FaTrophy, FaCalendarAlt, FaFileAlt, FaArrowLeft } from 'react-icons/fa';
 import Navbar from '../Navbar';
 

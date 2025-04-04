@@ -88,35 +88,172 @@ router.get('/results', async (req, res) => {
   }
 });
 
+router.get('/check-data', async (req, res) => {
+  const { batchNumber, semester, department } = req.query;
 
-router.get('/analytics', async (req, res) => {
-      const { year, semester } = req.query;
-      try {
-        const avgMarks = await pool.query(
-          'SELECT subject, AVG(marks) AS average_marks FROM student_results WHERE year = $1 AND semester = $2 GROUP BY subject',
-          [year, semester]
-        );
-        
-        const topPerformers = await pool.query(
-          'SELECT student_name, AVG(marks) AS avg_marks FROM student_results WHERE year = $1 AND semester = $2 GROUP BY student_name ORDER BY avg_marks DESC LIMIT 5',
-          [year, semester]
-        );
-    
-        const performanceTrend = await pool.query(
-          'SELECT semester, AVG(marks) AS avg_marks FROM student_results WHERE year = $1 GROUP BY semester ORDER BY semester',
-          [year]
-        );
-    
-        res.json({
-          averageMarks: avgMarks.rows,
-          topPerformers: topPerformers.rows,
-          performanceTrend: performanceTrend.rows,
-        });
-      } catch (error) {
-        console.error('Error fetching analytics:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-      }
+  try {
+      // Format batch (e.g., "2021-2025" -> "2021_2025")
+      const formattedBatch = batchNumber.replace("-", "_");
+      const semesterNumber = semester.replace("Sem", ""); // Convert "Sem1" to "1"
+
+      const tableName = `student_results_${department.toLowerCase()}_${formattedBatch}_${semesterNumber}`;
+
+      const query = `SELECT to_regclass('${tableName}') IS NOT NULL AS exists;`; // PostgreSQL query
+      // For MySQL: `SHOW TABLES LIKE '${tableName}';`
+
+      const result = await pool.query(query);
+      const tableExists = result.rows[0].exists; // true or false
+
+      res.json({ exists: tableExists });
+  } catch (error) {
+      console.error("Error checking table existence:", error);
+      res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
+router.get("/analytics", async (req, res) => {
+  const { department, batchNumber, semester } = req.query;
+  console.log(department, batchNumber, semester);
+
+  if (!department || !batchNumber || !semester) {
+    return res.status(400).json({ error: "Department, batch number, and semester are required" });
+  }
+
+  const formattedBatch = batchNumber.replace(/-/g, "_");
+  const tableName = `student_results_${department.toLowerCase()}_${formattedBatch}_${semester}`;
+  console.log(tableName);
+
+  try {
+    const client = await pool.connect();
+
+    // Check if table exists
+    const tableExistsQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = $1
+      ) AS exists;
+    `;
+    const tableExistsResult = await client.query(tableExistsQuery, [tableName]);
+
+    if (!tableExistsResult.rows[0].exists) {
+      client.release();
+      return res.status(404).json({ error: "Results data not found for the given inputs" });
+    }
+
+    // Fetch subjects dynamically (excluding roll_number, student_name, and id)
+    const subjectsQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = $1 
+      AND column_name NOT IN ('roll_number', 'student_name', 'id');
+    `;
+    const subjectsResult = await client.query(subjectsQuery, [tableName]);
+    const subjects = subjectsResult.rows.map(row => row.column_name);
+
+    if (subjects.length === 0) {
+      client.release();
+      return res.status(400).json({ error: "No subjects found in the results table" });
+    }
+
+    // Fetch average marks per subject
+    const avgMarksQuery = `
+      SELECT ${subjects.map(subject => `AVG("${subject}") AS "${subject}"`).join(", ")}
+      FROM ${tableName};
+    `;
+    const avgMarksResult = await client.query(avgMarksQuery);
+
+    // Fetch fail counts (students scoring < 5 in each subject)
+    const failCountsQuery = `
+      SELECT ${subjects.map(subject => `COUNT(*) FILTER (WHERE "${subject}" < 5) AS "${subject}_fails"`).join(", ")}
+      FROM ${tableName};
+    `;
+    const failCountsResult = await client.query(failCountsQuery);
+
+    // **Pass Percentage Calculation**
+    const passPercentageQuery = `
+      SELECT ${subjects.map(subject => `
+        (COUNT(*) FILTER (WHERE "${subject}" >= 5) * 100.0 / COUNT(*)) AS "${subject}_pass_percentage"
+      `).join(", ")}
+      FROM ${tableName};
+    `;
+    const passPercentageResult = await client.query(passPercentageQuery);
+
+    // Process the results
+    const averageMarks = Object.entries(avgMarksResult.rows[0])
+      .map(([subject, average_marks]) => ({ subject, average_marks }));
+
+    const failCounts = Object.entries(failCountsResult.rows[0])
+      .map(([subject, fail_count]) => ({ subject: subject.replace("_fails", ""), fail_count }));
+
+    const passPercentage = Object.entries(passPercentageResult.rows[0])
+      .map(([subject, pass_percentage]) => ({
+        subject: subject.replace("_pass_percentage", ""),
+        pass_percentage: parseFloat(pass_percentage).toFixed(2) + "%"
+      }));
+
+    // **Calculate Semester-Wise Overall Pass Percentage**
+    const overallPassPercentage = passPercentage
+      .map(item => parseFloat(item.pass_percentage))
+      .reduce((sum, value) => sum + value, 0) / passPercentage.length;
+
+    console.log(`Overall Pass Percentage for ${semester}:`, overallPassPercentage);
+
+    // **Save the semester-wise pass percentage in a table**
+    const saveSemesterPerformanceQuery = `
+      INSERT INTO semester_performance (department, batch, semester, pass_percentage)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (department, batch, semester) 
+      DO UPDATE SET pass_percentage = EXCLUDED.pass_percentage;
+    `;
+    await client.query(saveSemesterPerformanceQuery, [department, batchNumber, semester, overallPassPercentage]);
+
+    client.release();
+
+    res.json({
+      averageMarks,
+      failCounts,
+      passPercentage,
+      overallPassPercentage: overallPassPercentage.toFixed(2) + "%" // Return overall percentage
     });
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/batch-performance", async (req, res) => {
+  const { batch } = req.query;
+  console.log(batch)
+
+  if (!batch) {
+    return res.status(400).json({ error: "Batch is required" });
+  }
+
+  try {
+    const client = await pool.connect();
+    const query = `
+      SELECT department, semester, AVG(pass_percentage) AS avg_pass_percentage
+      FROM semester_performance
+      WHERE batch = $1
+      GROUP BY department, semester
+      ORDER BY semester;
+    `;
+    const result = await client.query(query, [batch]);
+    client.release();
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "No data found for the selected batch" });
+    }
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching batch performance:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 
 
