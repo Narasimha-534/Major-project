@@ -240,14 +240,28 @@ router.get("/batch-performance", async (req, res) => {
       GROUP BY department, semester
       ORDER BY semester;
     `;
+    const query2 = `
+      SELECT 
+          department, 
+          AVG(pass_percentage) AS average_pass_percentage
+      FROM 
+          semester_performance
+      GROUP BY 
+          department;
+
+    `
     const result = await client.query(query, [batch]);
+    const result2 = await client.query(query2)
     client.release();
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "No data found for the selected batch" });
     }
-
-    res.json(result.rows);
+    res.json({
+      batchPerformance: result.rows,
+      overallDepartmentPerformance: result2.rows,
+    });
+    
   } catch (error) {
     console.error("Error fetching batch performance:", error);
     res.status(500).json({ error: "Internal Server Error" });
